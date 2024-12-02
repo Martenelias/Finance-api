@@ -1,6 +1,6 @@
 import mysql from 'mysql2';
 import config from './config';
 
-const connection = mysql.createConnection(config.db).promise();
+const pool = mysql.createPool(config.db).promise();
 
-export default connection;
+export default pool;
