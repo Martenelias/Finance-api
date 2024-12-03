@@ -13,8 +13,14 @@ import isAdmin from './middlewares/isAdmin';
 import errorMiddleware from './middlewares/errorMiddleware';
 import notFound from './middlewares/notFoundMiddleware';
 import { error } from 'console';
+import cors from 'cors';
+import helmet from 'helmet';
 
 const app: Express = express();
+
+app.use(cors());
+app.use(helmet());
+app.options('*', cors());
 
 // Parse incoming requests with JSON payloads
 app.use(express.json());
