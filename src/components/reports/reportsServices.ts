@@ -3,7 +3,7 @@ import { IReport } from './reportsModels';
 import { FieldPacket } from 'mysql2';
 
 // Function to get all monthly reports
-const getAllMonthlyReports = async (): Promise<IReport[]> => {
+const getAllMonthlyReports = async (userId: number): Promise<IReport[]> => {
   const [reports]: [IReport[], FieldPacket[]] = await connection.query(
     `
     SELECT 
@@ -15,37 +15,43 @@ const getAllMonthlyReports = async (): Promise<IReport[]> => {
     FROM 
       transactions
     WHERE 
-      deleted_at IS NULL
+      user_id = ? AND deleted_at IS NULL
     GROUP BY 
       month
     ORDER BY 
       month DESC;
-    `
+    `,
+    [userId]  // Pass the userId to the query
   );
   return reports;
 };
 
 // Function to get a specific monthly report for a given month
-const getMonthlyReportByMonth = async (month: string): Promise<IReport | undefined> => {
-  const [report]: [IReport[], FieldPacket[]] = await connection.query(
+const getMonthlyReportByMonth = async (userId: number, year: number, month: number): Promise<IReport[]> => {
+  const monthFormatted = `${year}-${month.toString().padStart(2, '0')}`; // Format month like 'YYYY-MM'
+
+  const [reports]: [IReport[], FieldPacket[]] = await connection.execute(
     `
     SELECT 
-      DATE_FORMAT(transaction_date, '%Y-%m') AS month,
-      SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) AS totalIncome,
-      SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS totalExpense,
-      (SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) - 
-       SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END)) AS balance
+        DATE_FORMAT(transaction_date, '%Y-%m') AS month,
+        SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) AS totalIncome,
+        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS totalExpense,
+        (SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) - 
+         SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END)) AS balance
     FROM 
-      transactions
+        transactions
     WHERE 
-      DATE_FORMAT(transaction_date, '%Y-%m') = ? AND deleted_at IS NULL
+        user_id = ? AND DATE_FORMAT(transaction_date, '%Y-%m') = ? AND deleted_at IS NULL
     GROUP BY 
-      month;
-    `,
-    [month]
+        month
+    ORDER BY 
+        month DESC;
+    `, [userId, monthFormatted]
   );
-  return report[0];
+
+  return reports;
 };
+
 
 // Function to get the savings report
 const getSavingsReport = async (userId: number): Promise<IReport[] | undefined> => {
