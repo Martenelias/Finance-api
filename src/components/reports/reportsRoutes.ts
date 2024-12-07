@@ -3,7 +3,7 @@ import reportsControllers from './reportsControllers';
 
 const router = express.Router();
 
-router.get('/', reportsControllers.getAllMonthlyReports);
+router.get('/:userId', reportsControllers.getAllMonthlyReports);
 
 router.get(
   '/:month',
